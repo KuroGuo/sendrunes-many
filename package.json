@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "description": "Sending Runes to Multiple Addresses",
   "scripts": {
-    "build-dev": "del /q dist\\* && cross-env BITRUNE_ENV=development webpack && copy bitrune.js dist\\bitrune.js && copy index.html dist\\index.html",
-    "build": "del /q dist\\* && cross-env BITRUNE_ENV=production webpack && copy bitrune.js dist\\bitrune.js && copy index.html dist\\index.html"
+    "build-dev": "del /q dist\\* && cross-env BITFRONT_ENV=development webpack && copy bitfront.js dist\\bitfront.js && copy index.html dist\\index.html",
+    "build": "del /q dist\\* && cross-env BITFRONT_ENV=production webpack && copy bitfront.js dist\\bitfront.js && copy index.html dist\\index.html"
   },
   "repository": {
     "type": "git",

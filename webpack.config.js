@@ -33,7 +33,7 @@ module.exports = {
       Buffer: ['buffer', 'Buffer']
     }),
     new webpack.DefinePlugin({
-      'process.env.BITRUNE_ENV': JSON.stringify(process.env.BITRUNE_ENV)
+      'process.env.BITFRONT_ENV': JSON.stringify(process.env.BITFRONT_ENV)
     })
   ]
 }

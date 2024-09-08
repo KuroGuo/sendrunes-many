@@ -4,7 +4,7 @@ interface Window {
   bitcoinjsLib: any,
   runestoneLib: any,
 
-  bitrune: {
+  bitfront: {
     connect: typeof connect
     sendRunesMany: typeof sendRunesMany
   }
@@ -16,7 +16,7 @@ const { encodeRunestone } = window.runestoneLib
 
 tinysecp.then((tinySecp256k1: any) => btcJSLib.initEccLib(tinySecp256k1))
 
-window.bitrune = { connect, sendRunesMany }
+window.bitfront = { connect, sendRunesMany }
 
 let connected: boolean, _isTestnet: boolean
 
