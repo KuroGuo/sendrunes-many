@@ -121,7 +121,7 @@ const outputs = [
   { toAddress: 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20', amount: 45600000000 }
 ]
 
-window.deai.sendRunesMany({
+deai.sendRunesMany({
   isTestnet,
   runeId: isTestnet ? '2871448:97' : '853995:330',
   outputs,
