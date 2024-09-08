@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEAI 使用示例</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    button {
+      margin-top: 10px;
+    }
+
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      overflow-x: auto;
+    }
+
+    code {
+      background-color: #f9f9f9;
+      padding: 2px 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>DEAI 使用示例</h1>
+
+    <h2>方法说明</h2>
+
+    <h3>connect</h3>
+    <p>连接钱包并获取钱包相关信息。</p>
+    <ul>
+      <li><strong>参数:</strong> <code>isTestnet: boolean</code> - 指定是否连接到测试网络。</li>
+      <li><strong>返回:</strong> Promise，包含钱包类型、网络类型、地址、公钥和余额。</li>
+    </ul>
+    <pre><code>window.deai.connect(true).then(info => {
+  console.log(info);
+}).catch(error => {
+  console.error(error);
+});</code></pre>
+
+    <h3>sendRunesMany</h3>
+    <p>发送多个 Runes。</p>
+    <ul>
+      <li><strong>参数:</strong>
+        <ul>
+          <li><code>isTestnet: boolean</code> - 是否使用测试网络。</li>
+          <li><code>runeId: string</code> - Rune 的 ID。</li>
+          <li><code>outputs: [{ toAddress: string, amount: number }]</code> - 接收地址和金额的数组。</li>
+          <li><code>options?: { feeRate: number }</code> - 可选的交易费率。</li>
+        </ul>
+      </li>
+      <li><strong>返回:</strong> Promise，解析为签名的 PSBT Hex 字符串。</li>
+    </ul>
+    <pre><code>const outputs = [
+  { toAddress: 'address1', amount: 1000 },
+  { toAddress: 'address2', amount: 2000 }
+];
+
+window.deai.sendRunesMany({
+  isTestnet: true,
+  runeId: '12345:1',
+  outputs,
+  options: { feeRate: 10 }
+}).then(signedPsbtHex => {
+  console.log(signedPsbtHex);
+}).catch(error => {
+  console.error(error);
+});</code></pre>
+
+    <h2>使用示例</h2>
+
+    <button id="connectButton">连接钱包</button>
+    <pre id="connectResult"></pre>
+
+    <button id="sendRunesButton">发送 Runes</button>
+    <pre id="sendRunesResult"></pre>
+  </div>
+
+  <script>
+    document.getElementById('connectButton').addEventListener('click', async () => {
+      try {
+        const result = await window.deai.connect(true);
+        document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        document.getElementById('connectResult').textContent = error.message;
+      }
+    });
+
+    document.getElementById('sendRunesButton').addEventListener('click', async () => {
+      try {
+        const outputs = [
+          { toAddress: 'address1', amount: 1000 },
+          { toAddress: 'address2', amount: 2000 }
+        ];
+        const result = await window.deai.sendRunesMany({
+          isTestnet: true,
+          runeId: '12345:1',
+          outputs,
+          options: { feeRate: 10 }
+        });
+        document.getElementById('sendRunesResult').textContent = result;
+      } catch (error) {
+        document.getElementById('sendRunesResult').textContent = error.message;
+      }
+    });
+  </script>
+</body>
+
+</html>
