@@ -233,6 +233,8 @@ async function signPsbt(psbtHex: string, options: any = {}) {
       if (walletType === 'okx' && options.autoFinalized === false) {
         delete options.toSignInputs
         return await wallet.signPsbt(psbtHex, options)
+      } else {
+        throw err
       }
     }
   } catch (err: any) {
