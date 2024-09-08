@@ -33,7 +33,7 @@ module.exports = {
       Buffer: ['buffer', 'Buffer']
     }),
     new webpack.DefinePlugin({
-      'process.env.DEAI_ENV': JSON.stringify(process.env.DEAI_ENV)
+      'process.env.BITRUNE_ENV': JSON.stringify(process.env.BITRUNE_ENV)
     })
   ]
 }

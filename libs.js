@@ -1,4 +1,4 @@
-window.env = process.env.DEAI_ENV
+window.env = process.env.BITRUNE_ENV
 window.Buffer = require('buffer').Buffer
 window.tinySecp256k1 = require('tiny-secp256k1')
 window.bitcoinjsLib = require('bitcoinjs-lib')

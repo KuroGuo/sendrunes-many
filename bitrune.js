@@ -4,7 +4,7 @@ const { encodeRunestone } = window.runestoneLib
 
 tinysecp.then(tinySecp256k1 => btcJSLib.initEccLib(tinySecp256k1))
 
-window.deai = { connect, sendRunesMany }
+window.bitrune = { connect, sendRunesMany }
 
 async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
   try {

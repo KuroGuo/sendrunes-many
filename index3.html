@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DEAI 使用示例</title>
+  <title>bitrune 使用示例</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -36,7 +36,7 @@
 
 <body>
   <div class="container">
-    <h1>DEAI 使用示例</h1>
+    <h1>bitrune 使用示例</h1>
 
     <h2>方法说明</h2>
 
@@ -46,7 +46,7 @@
       <li><strong>参数:</strong> <code>isTestnet: boolean</code> - 指定是否连接到测试网络。</li>
       <li><strong>返回:</strong> Promise，包含钱包类型、网络类型、地址、公钥和余额。</li>
     </ul>
-    <pre><code>window.deai.connect(true).then(info => {
+    <pre><code>window.bitrune.connect(true).then(info => {
   console.log(info);
 }).catch(error => {
   console.error(error);
@@ -70,7 +70,7 @@
   { toAddress: 'address2', amount: 2000 }
 ];
 
-window.deai.sendRunesMany({
+window.bitrune.sendRunesMany({
   isTestnet: true,
   runeId: '12345:1',
   outputs,
@@ -93,7 +93,7 @@ window.deai.sendRunesMany({
   <script>
     document.getElementById('connectButton').addEventListener('click', async () => {
       try {
-        const result = await window.deai.connect(true);
+        const result = await window.bitrune.connect(true);
         document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2);
       } catch (error) {
         document.getElementById('connectResult').textContent = error.message;
@@ -106,7 +106,7 @@ window.deai.sendRunesMany({
           { toAddress: 'address1', amount: 1000 },
           { toAddress: 'address2', amount: 2000 }
         ];
-        const result = await window.deai.sendRunesMany({
+        const result = await window.bitrune.sendRunesMany({
           isTestnet: true,
           runeId: '12345:1',
           outputs,

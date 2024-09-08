@@ -4,7 +4,7 @@ interface Window {
   bitcoinjsLib: any,
   runestoneLib: any,
 
-  deai: {
+  bitrune: {
     connect: typeof connect
     sendRunesMany: typeof sendRunesMany
   }
@@ -16,7 +16,7 @@ const { encodeRunestone } = window.runestoneLib
 
 tinysecp.then((tinySecp256k1: any) => btcJSLib.initEccLib(tinySecp256k1))
 
-window.deai = { connect, sendRunesMany }
+window.bitrune = { connect, sendRunesMany }
 
 async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
   isTestnet: boolean, runeId: string, outputs: [{ toAddress: string, amount: number }], options?: { feeRate: number }
