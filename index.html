@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>window.deai API 文档</title>
+  <title>window.bitrune API 文档</title>
   <script src="libs.js"></script>
-  <script src="main.js"></script>
+  <script src="bitrune.js"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -60,12 +60,12 @@
 </head>
 
 <body>
-  <h1>deai API 文档</h1>
+  <h1>bitrune API 文档</h1>
 
   <h2>导入</h2>
-  <a href="libs.js">libs.js</a> + <a href="main.js">main.js</a>
+  <a href="libs.js">libs.js</a> + <a href="bitrune.js">bitrune.js</a>
   <pre><code>&lt;script src="libs.js"&gt;&lt;/script&gt;
-&lt;script src="main.js"&gt;&lt;/script&gt;</code></pre>
+&lt;script src="bitrune.js"&gt;&lt;/script&gt;</code></pre>
 
   <h2>1. connect 方法</h2>
   <p>用于连接钱包并获取用户信息。</p>
@@ -85,7 +85,7 @@
   <h3>示例：</h3>
   <pre><code contenteditable="true" id="code_connect">const isTestnet = true
 
-deai.connect(isTestnet).then(result => {
+bitrune.connect(isTestnet).then(result => {
   document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2)
 }).catch(err => {
   document.getElementById('connectResult').textContent = '连接失败: ' + err.message
@@ -121,7 +121,7 @@ const outputs = [
   { toAddress: 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20', amount: 45600000000 }
 ]
 
-deai.sendRunesMany({
+bitrune.sendRunesMany({
   isTestnet,
   runeId: isTestnet ? '2871448:97' : '853995:330',
   outputs,
