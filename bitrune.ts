@@ -18,8 +18,10 @@ tinysecp.then((tinySecp256k1: any) => btcJSLib.initEccLib(tinySecp256k1))
 
 window.bitrune = { connect, sendRunesMany }
 
-async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
-  isTestnet: boolean, runeId: string, outputs: [{ toAddress: string, amount: number }], options?: { feeRate: number }
+let connected: boolean, _isTestnet: boolean
+
+async function sendRunesMany({ runeId, outputs, options }: {
+  runeId: string, outputs: [{ toAddress: string, amount: number }], options?: { feeRate: number }
 }): Promise<string> {
   try {
     if (!address) throw new Error('!address')
@@ -30,7 +32,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
 
     console.log('addressType:', addressType)
 
-    let payment, network = isTestnet ? btcJSLib.networks.testnet : btcJSLib.networks.bitcoin
+    let payment, network = _isTestnet ? btcJSLib.networks.testnet : btcJSLib.networks.bitcoin
 
     if (addressType === 'Taproot') {
       payment = btcJSLib.payments.p2tr({ internalPubkey: toXOnly(Buffer.from(_publicKey, 'hex')), network })
@@ -47,7 +49,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
 
     const getRawTransactionHex = async (txHash: string): Promise<string> => {
       try {
-        const response = await fetch(`https://blockstream.info/${isTestnet ? 'testnet/' : ''}api/tx/${txHash}/hex`)
+        const response = await fetch(`https://blockstream.info/${_isTestnet ? 'testnet/' : ''}api/tx/${txHash}/hex`)
         return response.text()
       } catch (error) {
         console.error('Error fetching transaction:', error);
@@ -55,7 +57,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
       }
     }
 
-    const runeUtxos: any[] = (await btcProxy(isTestnet, '/utxo/runes', {
+    const runeUtxos: any[] = (await btcProxy('/utxo/runes', {
       address,
       runeid: runeId
     }))
@@ -153,7 +155,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
       output: edict.output
     }))).length * feeRate
 
-    const utxos: any[] = await btcProxy(isTestnet, '/utxo/btc', { address })
+    const utxos: any[] = await btcProxy('/utxo/btc', { address })
     // await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/runes?${isTestnet ? 'network=testnet&' : ''}address=${address}&runeid=${runeId}`)).json()
     // const utxos: any[] = await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/btc?address=${address}${isTestnet ? '&network=testnet' : ''}`)).json()
     // const totalUtxos = [...runeUtxos, ...utxos]
@@ -200,7 +202,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
 
     console.log('psbtHex:', psbtHex)
 
-    const signedPsbtHex = await signPsbt(isTestnet, psbtHex)
+    const signedPsbtHex = await signPsbt(psbtHex)
 
     console.log('signedPsbtHex:', signedPsbtHex)
 
@@ -215,10 +217,10 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
   }
 }
 
-async function signPsbt(isTestnet: boolean, psbtHex: string, options: any = {}) {
+async function signPsbt(psbtHex: string, options: any = {}) {
   try {
     if (walletType === 'okx' && options.autoFinalized === false) {
-      const psbt = await btcProxy(isTestnet, '/compile', { psbtHex }, true)
+      const psbt = await btcProxy('/compile', { psbtHex }, true)
       options.toSignInputs = psbt.inputs.filter((i: any) => i.address === address).map((i: any) => ({
         index: i.index,
         publicKey: _publicKey
@@ -239,9 +241,9 @@ async function signPsbt(isTestnet: boolean, psbtHex: string, options: any = {}) 
   }
 }
 
-async function btcProxy(isTestnet: boolean, api: string, params?: any, isPost?: boolean) {
+async function btcProxy(api: string, params?: any, isPost?: boolean) {
   if (isPost) {
-    if (isTestnet) {
+    if (_isTestnet) {
       params.network = 'testnet'
       if (!params.node) params.node = '1'
     }
@@ -252,19 +254,19 @@ async function btcProxy(isTestnet: boolean, api: string, params?: any, isPost?: 
     // })).json()
     return (
       await fetch(`${window.env === 'development' ? (
-        isTestnet ? 'https://www.miningmachine.xyz' : 'https://www.runesdeai.com'
+        _isTestnet ? 'https://www.miningmachine.xyz' : 'https://www.runesdeai.com'
       ) : ''}/api/deai${api}`, {
         method: 'POST',
         body: JSON.stringify(params)
       })).json()
   } else {
     const query = new URLSearchParams(params)
-    if (isTestnet) {
+    if (_isTestnet) {
       query.set('network', 'testnet')
       if (!query.get('node')) query.set('node', '1')
     }
     return (await fetch(`${window.env === 'development' ? (
-      isTestnet ? 'https://www.miningmachine.xyz' : 'https://www.runesdeai.com'
+      _isTestnet ? 'https://www.miningmachine.xyz' : 'https://www.runesdeai.com'
     ) : ''}/api/deai${api}?${query.toString()}`)).json()
   }
 }
@@ -326,8 +328,10 @@ async function connect(isTestnet: boolean): Promise<{
     alert(err.message)
     throw err
   }
-  if (wallet) {
-    wallet.on('accountsChanged', () => { connect(isTestnet) })
+  _isTestnet = isTestnet
+  if (wallet && !connected) {
+    connected = true
+    wallet.on('accountsChanged', () => { connect(_isTestnet) })
     wallet.on('networkChanged', (network: string) => {
       console.log('networkChanged:', network)
     })
