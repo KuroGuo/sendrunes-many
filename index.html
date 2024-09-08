@@ -1,0 +1,83 @@
+<html>
+
+<head>
+  <title>Send Runes Many</title>
+  <meta name="description" content="发送符文到多个地址">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="libs.js"></script>
+  <script src="main.js"></script>
+</head>
+
+<body>
+  <button id="btn_connect">连接钱包</button>
+  <ul style="font-family: Consolas, monospace; font-size: 12px;">
+    <li>钱包类型：<span id="wallet_type"></span></li>
+    <li>网络：<span id="network"></span></li>
+    <li>地址：<span id="address"></span></li>
+    <li>公钥：<span id="public_key"></span></li>
+    <li>BTC余额：<span id="balance"></span> BTC</li>
+  </ul>
+
+  <h4>收款方数组</h4>
+  <p><textarea id="textarea_outputs"
+      style="width: 650px; height: 180px; font-size: 12px; font-family: Consolas, monospace;">[
+  {
+    "toAddress": "tb1q47tzthnmft9l62k23w33jrd2gya8vnml389kz7",
+    "amount": 12300000000
+  },
+  {
+    "toAddress": "tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20",
+    "amount": 45600000000
+  }
+]</textarea></p>
+  <button id="btn_sendrunes_many">签署交易</button>
+  <h4>用户签名之后的 PSBTHex：</h4>
+  <code id="psbthex" style="font-family: Consolas, monospace; word-break: break-all; font-size: 12px;"></code>
+
+  <script>
+    const isTestnet = true // 设置是否是测试网络
+
+    const $ = {
+      btn_connect: document.querySelector('#btn_connect'),
+
+      wallet_type: document.querySelector('#wallet_type'),
+      network: document.querySelector('#network'),
+      address: document.querySelector('#address'),
+      public_key: document.querySelector('#public_key'),
+      balance: document.querySelector('#balance'),
+
+      textarea_outputs: document.querySelector('#textarea_outputs'),
+      btn_sendrunes_many: document.querySelector('#btn_sendrunes_many'),
+      psbthex: document.querySelector('#psbthex')
+    }
+
+    btn_connect.addEventListener('click', () => {
+      deai.connect(isTestnet).then(({
+        walletType,
+        network,
+        address,
+        publicKey,
+        balance
+      }) => {
+        $.wallet_type.innerHTML = walletType
+        $.network.innerHTML = network
+        $.address.innerHTML = address
+        $.public_key.innerHTML = publicKey
+        $.balance.innerHTML = balance / Math.pow(10, 8)
+      })
+    })
+
+    btn_sendrunes_many.addEventListener('click', () => {
+      deai.sendRunesMany({
+        isTestnet,
+        runeId: isTestnet ? '2871448:97' : '853995:330',
+        outputs: JSON.parse($.textarea_outputs.value),
+        options: { feeRate: 5 }
+      }).then(signedPsbtHex => {
+        $.psbthex.innerHTML = signedPsbtHex
+      })
+    })
+  </script>
+</body>
+
+</html>
