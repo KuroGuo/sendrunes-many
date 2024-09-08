@@ -1,3 +1,9 @@
+const tinysecp = window.tinySecp256k1
+const btcJSLib = window.bitcoinjsLib
+const { encodeRunestone } = window.runestoneLib
+
+tinysecp.then(tinySecp256k1 => btcJSLib.initEccLib(tinySecp256k1))
+
 window.deai = { connect, sendRunesMany }
 
 async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
@@ -5,10 +11,6 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
     if (!address) throw new Error("!address")
     if (!_publicKey) throw new Error("!_publicKey")
     console.log("publicKey:", _publicKey)
-
-    const tinysecp = await window.tinySecp256k1
-    const btcJSLib = window.bitcoinjsLib
-    btcJSLib.initEccLib(tinysecp)
 
     const addressType = getBitcoinAddressType(address)
 
@@ -114,7 +116,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
       amount: BigInt(output.amount),
       output: 2 + i
     }))
-    const edictRunestone = window.runestoneLib.encodeRunestone({ edicts })
+    const edictRunestone = encodeRunestone({ edicts })
 
     psbt.addOutput({
       script: edictRunestone.encodedRunestone,
