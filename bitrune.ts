@@ -212,7 +212,7 @@ async function sendRunesMany({ runeId, outputs, options }: {
 
     return signedPsbtHex
   } catch (err: any) {
-    alert(err.message)
+    // alert(err.message)
     throw err
   }
 }
@@ -236,7 +236,7 @@ async function signPsbt(psbtHex: string, options: any = {}) {
       }
     }
   } catch (err: any) {
-    alert(err.message)
+    // alert(err.message)
     throw err
   }
 }
@@ -325,7 +325,7 @@ async function connect(isTestnet: boolean): Promise<{
       throw new Error('只支持 UniSat 钱包和 OKX 钱包')
     }
   } catch (err: any) {
-    alert(err.message)
+    // alert(err.message)
     throw err
   }
   _isTestnet = isTestnet
