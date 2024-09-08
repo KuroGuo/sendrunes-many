@@ -109,17 +109,15 @@ bitfront.connect(isTestnet).then(result => {
   <p>Promise，解析为签名后的 PSBT 十六进制字符串。</p>
   <h3>示例：</h3>
   <pre><code contenteditable="true" id="code_sendrunes_many">const isTestnet = true
+
+const runeId = isTestnet ? '2871448:97' : '853995:330'
     
 const outputs = [
   { toAddress: 'tb1q47tzthnmft9l62k23w33jrd2gya8vnml389kz7', amount: 12300000000 },
   { toAddress: 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20', amount: 45600000000 }
 ]
 
-bitfront.sendRunesMany({
-  runeId: isTestnet ? '2871448:97' : '853995:330',
-  outputs,
-  options: { feeRate: 5 }
-}).then(signedPSBTHex => {
+bitfront.sendRunesMany(runeId, outputs, { feeRate: 5 }).then(signedPSBTHex => {
   document.getElementById('sendResult').textContent = '交易已签名: ' + signedPSBTHex
 }).catch(err => {
   document.getElementById('sendResult').textContent = '发送失败: ' + err.message

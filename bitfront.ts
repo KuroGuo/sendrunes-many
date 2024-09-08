@@ -20,9 +20,7 @@ window.bitfront = { connect, sendRunesMany }
 
 let connected: boolean, _isTestnet: boolean
 
-async function sendRunesMany({ runeId, outputs, options }: {
-  runeId: string, outputs: [{ toAddress: string, amount: number }], options?: { feeRate: number }
-}): Promise<string> {
+async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amount: number }], options?: { feeRate: number }): Promise<string> {
   try {
     if (!address) throw new Error('!address')
     if (!_publicKey) throw new Error('!_publicKey')
