@@ -48,7 +48,7 @@
       border-radius: 4px;
     }
 
-    button:hover {
+    button:active {
       background-color: #2980b9;
     }
 
@@ -137,7 +137,7 @@ deai.sendRunesMany({
   <script>
     function connectWallet() {
       try {
-        new Function(document.querySelector('#code_connect').textContent)()
+        new Function(document.getElementById('code_connect').textContent)()
       } catch (err) {
         alert(err.message)
       }
@@ -145,7 +145,7 @@ deai.sendRunesMany({
 
     function sendRunes() {
       try {
-        new Function(document.querySelector('#code_sendrunes_many').textContent)()
+        new Function(document.getElementById('code_sendrunes_many').textContent)()
       } catch (err) {
         alert(err.message)
       }
