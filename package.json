@@ -1,0 +1,33 @@
+{
+  "name": "sendrunes-many",
+  "version": "0.0.1",
+  "description": "Sending Runes to Multiple Addresses",
+  "scripts": {
+    "build-dev": "rd /s /q dist && cross-env DEAI_ENV=development webpack && copy main.js dist\\main.js && copy index.html \"dist/index.html\"",
+    "build": "rd /s /q dist && cross-env DEAI_ENV=production webpack && copy main.js dist\\main.js && copy index.html \"dist/index.html\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KuroGuo/sendrunes-many.git"
+  },
+  "keywords": [
+    "Bitcoin",
+    "Runes"
+  ],
+  "author": "Kuro",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KuroGuo/sendrunes-many/issues"
+  },
+  "homepage": "https://github.com/KuroGuo/sendrunes-many#readme",
+  "devDependencies": {
+    "@magiceden-oss/runestone-lib": "^1.0.2",
+    "bitcoinjs-lib": "^6.1.6",
+    "buffer": "^6.0.3",
+    "cross-env": "^7.0.3",
+    "tiny-secp256k1": "^2.2.3",
+    "typescript": "^5.5.4",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
