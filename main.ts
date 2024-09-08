@@ -128,6 +128,8 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
 
+    feeRate = Math.max(feeRate - 1, 1)
+
     // // 根据不同的地址类型调整估算大小
     // if (payment?.redeem?.output || addressType === 'Legacy') {
     //   // P2SH 或 Legacy 地址需要更多空间
