@@ -216,7 +216,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
   }
 }
 
-async function signPsbt(isTestnet, psbtHex, options) {
+async function signPsbt(isTestnet, psbtHex, options = {}) {
   try {
     if (walletType === "okx" && options.autoFinalized === false) {
       const psbt = await btcProxy(isTestnet, "/compile", { psbtHex }, true)
