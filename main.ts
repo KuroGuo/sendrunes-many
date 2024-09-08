@@ -97,16 +97,15 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
     if (totalInputRunesValue < totalAmount) throw new Error('Not Enough Runes')
 
     const [block, tx] = runeId.split(':')
-    const edictRunestone = window.runestoneLib.encodeRunestone({
-      edicts: outputs.map((output, i) => ({
-        id: {
-          block: BigInt(block),
-          tx: Number(tx)
-        },
-        amount: BigInt(output.amount),
-        output: 2 + i
-      }))
-    })
+    const edicts = outputs.map((output, i) => ({
+      id: {
+        block: BigInt(block),
+        tx: Number(tx)
+      },
+      amount: BigInt(output.amount),
+      output: 2 + i
+    }))
+    const edictRunestone = window.runestoneLib.encodeRunestone({ edicts })
 
     psbt.addOutput({
       script: edictRunestone.encodedRunestone,
@@ -128,10 +127,27 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }: {
 
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
-    if (payment?.redeem?.output || addressType === 'Legacy' || addressType === 'Taproot') {
-      feeRate += 3
-    }
-    let fee = estimatedSize * feeRate + 546 * (outputs.length + 1)
+
+    // // 根据不同的地址类型调整估算大小
+    // if (payment?.redeem?.output || addressType === 'Legacy') {
+    //   // P2SH 或 Legacy 地址需要更多空间
+    //   estimatedSize += psbt.data.inputs.length * 50
+    // } else if (addressType === 'Taproot') {
+    //   // Taproot 地址可能需要稍微不同的大小估算
+    //   estimatedSize = psbt.data.inputs.length * 160 + psbt.data.outputs.length * 43 + 10
+    // } else if (addressType === 'Native Segwit') {
+    //   // SegWit 地址通常需要较少的空间
+    //   estimatedSize = psbt.data.inputs.length * 102 + psbt.data.outputs.length * 31 + 10
+    // }
+
+    let fee = estimatedSize * feeRate + 546 * (outputs.length + 1) + JSON.stringify(edicts.map((edict: any) => ({
+      id: {
+        block: Number(edict.id.block),
+        tx: Number(tx)
+      },
+      amount: Number(edict.amount),
+      output: edict.output
+    }))).length * feeRate
 
     const utxos: any[] = await btcProxy(isTestnet, '/utxo/btc', { address })
     // await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/runes?${isTestnet ? 'network=testnet&' : ''}address=${address}&runeid=${runeId}`)).json()
@@ -334,7 +350,7 @@ function getOKXWallet(isTestnet: boolean) {
     ((window as any).okxwallet?.bitcoinTestnet || (window as any).okxwallet?.bitcoin) : (window as any).okxwallet?.bitcoin
 }
 
-function getBitcoinAddressType(address: string): string {
+function getBitcoinAddressType(address: string): 'Legacy' | 'Nested Segwit' | 'Taproot' | 'Native Segwit' | "Unknown" {
   // Mainnet P2PKH: starts with 1, length should be 34
   const MAINNET_P2PKH_REGEX = /^1[1-9A-HJ-NP-Za-km-z]{25,34}$/;
   // Mainnet P2SH: starts with 3, length should be 34
