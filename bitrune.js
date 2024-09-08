@@ -6,7 +6,9 @@ tinysecp.then(tinySecp256k1 => btcJSLib.initEccLib(tinySecp256k1))
 
 window.bitrune = { connect, sendRunesMany }
 
-async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
+let connected, _isTestnet
+
+async function sendRunesMany({ runeId, outputs, options }) {
   try {
     if (!address) throw new Error("!address")
     if (!_publicKey) throw new Error("!_publicKey")
@@ -17,7 +19,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
     console.log("addressType:", addressType)
 
     let payment,
-      network = isTestnet
+      network = _isTestnet
         ? btcJSLib.networks.testnet
         : btcJSLib.networks.bitcoin
 
@@ -49,7 +51,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
     const getRawTransactionHex = async txHash => {
       try {
         const response = await fetch(
-          `https://blockstream.info/${isTestnet ? "testnet/" : ""
+          `https://blockstream.info/${_isTestnet ? "testnet/" : ""
           }api/tx/${txHash}/hex`
         )
         return response.text()
@@ -59,7 +61,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
       }
     }
 
-    const runeUtxos = await btcProxy(isTestnet, "/utxo/runes", {
+    const runeUtxos = await btcProxy("/utxo/runes", {
       address,
       runeid: runeId
     })
@@ -171,7 +173,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
       ).length *
       feeRate
 
-    const utxos = await btcProxy(isTestnet, "/utxo/btc", { address })
+    const utxos = await btcProxy("/utxo/btc", { address })
     // await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/runes?${isTestnet ? 'network=testnet&' : ''}address=${address}&runeid=${runeId}`)).json()
     // const utxos: any[] = await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/btc?address=${address}${isTestnet ? '&network=testnet' : ''}`)).json()
     // const totalUtxos = [...runeUtxos, ...utxos]
@@ -223,7 +225,7 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
 
     console.log("psbtHex:", psbtHex)
 
-    const signedPsbtHex = await signPsbt(isTestnet, psbtHex)
+    const signedPsbtHex = await signPsbt(psbtHex)
 
     console.log("signedPsbtHex:", signedPsbtHex)
 
@@ -238,10 +240,10 @@ async function sendRunesMany({ isTestnet, runeId, outputs, options }) {
   }
 }
 
-async function signPsbt(isTestnet, psbtHex, options = {}) {
+async function signPsbt(psbtHex, options = {}) {
   try {
     if (walletType === "okx" && options.autoFinalized === false) {
-      const psbt = await btcProxy(isTestnet, "/compile", { psbtHex }, true)
+      const psbt = await btcProxy("/compile", { psbtHex }, true)
       options.toSignInputs = psbt.inputs
         .filter(i => i.address === address)
         .map(i => ({
@@ -264,9 +266,9 @@ async function signPsbt(isTestnet, psbtHex, options = {}) {
   }
 }
 
-async function btcProxy(isTestnet, api, params, isPost) {
+async function btcProxy(api, params, isPost) {
   if (isPost) {
-    if (isTestnet) {
+    if (_isTestnet) {
       params.network = "testnet"
       if (!params.node) params.node = "1"
     }
@@ -278,7 +280,7 @@ async function btcProxy(isTestnet, api, params, isPost) {
     return (
       await fetch(
         `${window.env === "development"
-          ? isTestnet
+          ? _isTestnet
             ? "https://www.miningmachine.xyz"
             : "https://www.runesdeai.com"
           : ""
@@ -291,14 +293,14 @@ async function btcProxy(isTestnet, api, params, isPost) {
     ).json()
   } else {
     const query = new URLSearchParams(params)
-    if (isTestnet) {
+    if (_isTestnet) {
       query.set("network", "testnet")
       if (!query.get("node")) query.set("node", "1")
     }
     return (
       await fetch(
         `${window.env === "development"
-          ? isTestnet
+          ? _isTestnet
             ? "https://www.miningmachine.xyz"
             : "https://www.runesdeai.com"
           : ""
@@ -364,9 +366,11 @@ async function connect(isTestnet) {
     alert(err.message)
     throw err
   }
-  if (wallet) {
+  _isTestnet = isTestnet
+  if (wallet && !connected) {
+    connected = true
     wallet.on("accountsChanged", () => {
-      connect(isTestnet)
+      connect(_isTestnet)
     })
     wallet.on("networkChanged", network => {
       console.log("networkChanged:", network)
