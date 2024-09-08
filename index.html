@@ -80,9 +80,9 @@
   <pre><code>const isTestnet = true
 
 deai.connect(isTestnet).then(result => {
-  document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2)
+  console.log(result)
 }).catch(err => {
-  document.getElementById('connectResult').textContent = '连接失败: ' + error.message
+  console.error(err)
 })</code></pre>
   <button onclick="connectWallet()">连接钱包</button>
   <pre id="connectResult"></pre>
@@ -121,9 +121,9 @@ window.deai.sendRunesMany({
   outputs,
   options: { feeRate: 5 }
 }).then(signedPSBTHex => {
-  document.getElementById('sendResult').textContent = '交易已签名: ' + signedPSBTHex
+  console.log(signedPSBTHex)
 }).catch(err => {
-  document.getElementById('sendResult').textContent = '发送失败: ' + error.message
+  console.error(err)
 })</code></pre>
   <button onclick="sendRunes()">发送 Runes</button>
   <pre id="sendResult"></pre>
