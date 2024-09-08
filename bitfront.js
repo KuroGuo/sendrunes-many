@@ -8,7 +8,7 @@ window.bitfront = { connect, sendRunesMany }
 
 let connected, _isTestnet
 
-async function sendRunesMany({ runeId, outputs, options }) {
+async function sendRunesMany(runeId, outputs, options) {
   try {
     if (!address) throw new Error("!address")
     if (!_publicKey) throw new Error("!_publicKey")
