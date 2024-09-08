@@ -59,7 +59,7 @@
 </head>
 
 <body>
-  <h1>window.deai API 文档</h1>
+  <h1>deai API 文档</h1>
 
   <h2>1. connect 方法</h2>
   <p>用于连接钱包并获取用户信息。</p>
@@ -77,20 +77,18 @@
     <li><code>balance</code>：数字，用户的余额（单位：聪）</li>
   </ul>
   <h3>示例：</h3>
-  <pre><code>async function connectWallet() {
-  try {
-    const isTestnet = true
-    const result = await window.deai.connect(isTestnet)
-    document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2)
-  } catch (error) {
-    document.getElementById('connectResult').textContent = '连接失败: ' + error.message
-  }
-}</code></pre>
+  <pre><code>const isTestnet = true
+    
+deai.connect(isTestnet).then(result => {
+  document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2)
+}).catch(err => {
+  document.getElementById('connectResult').textContent = '连接失败: ' + error.message
+})</code></pre>
   <button onclick="connectWallet()">连接钱包</button>
   <pre id="connectResult"></pre>
 
   <h2>2. sendRunesMany 方法</h2>
-  <p>用于发送多个 Rune 交易。</p>
+  <p>用于发送多个 Rune 交易（需要先连接钱包）。</p>
   <h3>参数：</h3>
   <ul>
     <li><code>isTestnet</code>：布尔值，表示是否使用测试网。</li>
@@ -110,53 +108,55 @@
   <h3>返回值：</h3>
   <p>Promise，解析为签名后的 PSBT 十六进制字符串。</p>
   <h3>示例：</h3>
-  <pre><code>async function sendRunes() {
-  try {
-    const isTestnet = true
-    const result = await window.deai.sendRunesMany({
-      isTestnet,
-      runeId: isTestnet ? '2871448:97' : '853995:330',
-      outputs: [
-        { toAddress: 'tb1q47tzthnmft9l62k23w33jrd2gya8vnml389kz7', amount: 12300000000 },
-        { toAddress: 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20', amount: 45600000000 }
-      ],
-      options: { feeRate: 5 }
-    })
-    document.getElementById('sendResult').textContent = '交易已签名: ' + result
-  } catch (error) {
-    document.getElementById('sendResult').textContent = '发送失败: ' + error.message
-  }
-}</code></pre>
+  <pre><code>const isTestnet = true
+
+const outputs = [
+  { toAddress: 'tb1q47tzthnmft9l62k23w33jrd2gya8vnml389kz7', amount: 12300000000 },
+  { toAddress: 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20', amount: 45600000000 }
+]
+
+window.deai.sendRunesMany({
+  isTestnet,
+  runeId: isTestnet ? '2871448:97' : '853995:330',
+  outputs,
+  options: { feeRate: 5 }
+}).then(signedPSBTHex => {
+  document.getElementById('sendResult').textContent = '交易已签名: ' + signedPSBTHex
+}).catch(err => {
+  document.getElementById('sendResult').textContent = '发送失败: ' + error.message
+})</code></pre>
   <button onclick="sendRunes()">发送 Runes</button>
   <pre id="sendResult"></pre>
 
   <script>
-    async function connectWallet() {
-      try {
-        const isTestnet = true
-        const result = await window.deai.connect(isTestnet)
+    function connectWallet() {
+      const isTestnet = true
+
+      deai.connect(isTestnet).then(result => {
         document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2)
-      } catch (error) {
+      }).catch(err => {
         document.getElementById('connectResult').textContent = '连接失败: ' + error.message
-      }
+      })
     }
 
-    async function sendRunes() {
-      try {
-        const isTestnet = true
-        const result = await window.deai.sendRunesMany({
-          isTestnet,
-          runeId: isTestnet ? '2871448:97' : '853995:330',
-          outputs: [
-            { toAddress: 'tb1q47tzthnmft9l62k23w33jrd2gya8vnml389kz7', amount: 12300000000 },
-            { toAddress: 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20', amount: 45600000000 }
-          ],
-          options: { feeRate: 5 }
-        })
-        document.getElementById('sendResult').textContent = '交易已签名: ' + result
-      } catch (error) {
+    function sendRunes() {
+      const isTestnet = true
+
+      const outputs = [
+        { toAddress: 'tb1q47tzthnmft9l62k23w33jrd2gya8vnml389kz7', amount: 12300000000 },
+        { toAddress: 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20', amount: 45600000000 }
+      ]
+
+      window.deai.sendRunesMany({
+        isTestnet,
+        runeId: isTestnet ? '2871448:97' : '853995:330',
+        outputs,
+        options: { feeRate: 5 }
+      }).then(signedPSBTHex => {
+        document.getElementById('sendResult').textContent = '交易已签名: ' + signedPSBTHex
+      }).catch(err => {
         document.getElementById('sendResult').textContent = '发送失败: ' + error.message
-      }
+      })
     }
   </script>
 </body>
