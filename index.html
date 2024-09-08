@@ -131,11 +131,19 @@ window.deai.sendRunesMany({
 
   <script>
     function connectWallet() {
-      new Function(document.querySelector('#code_connect').textContent)()
+      try {
+        new Function(document.querySelector('#code_connect').textContent)()
+      } catch (err) {
+        alert(err.message)
+      }
     }
 
     function sendRunes() {
-      new Function(document.querySelector('#code_sendrunes_many').textContent)()
+      try {
+        new Function(document.querySelector('#code_sendrunes_many').textContent)()
+      } catch (err) {
+        alert(err.message)
+      }
     }
   </script>
 </body>
