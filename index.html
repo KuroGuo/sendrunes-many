@@ -78,7 +78,7 @@
   </ul>
   <h3>示例：</h3>
   <pre><code>const isTestnet = true
-    
+
 deai.connect(isTestnet).then(result => {
   document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2)
 }).catch(err => {
@@ -135,7 +135,7 @@ window.deai.sendRunesMany({
       deai.connect(isTestnet).then(result => {
         document.getElementById('connectResult').textContent = JSON.stringify(result, null, 2)
       }).catch(err => {
-        document.getElementById('connectResult').textContent = '连接失败: ' + error.message
+        document.getElementById('connectResult').textContent = '连接失败: ' + err.message
       })
     }
 
@@ -155,7 +155,7 @@ window.deai.sendRunesMany({
       }).then(signedPSBTHex => {
         document.getElementById('sendResult').textContent = '交易已签名: ' + signedPSBTHex
       }).catch(err => {
-        document.getElementById('sendResult').textContent = '发送失败: ' + error.message
+        document.getElementById('sendResult').textContent = '发送失败: ' + err.message
       })
     }
   </script>
