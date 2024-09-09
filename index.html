@@ -65,9 +65,9 @@
   <h2>1. connect 方法</h2>
   <p>用于连接钱包并获取用户信息。</p>
   <h3>参数：</h3>
-  <ul>
+  <ol>
     <li><code>isTestnet</code>：布尔值，表示是否使用测试网。</li>
-  </ul>
+  </ol>
   <h3>返回值：</h3>
   <p>Promise，解析为包含以下属性的对象：</p>
   <ul>
@@ -91,7 +91,7 @@ bitfront.connect(isTestnet).then(result => {
   <h2>2. sendRunesMany 方法</h2>
   <p>用于发送多个 Rune 交易（需要先连接钱包）。</p>
   <h3>参数：</h3>
-  <ul>
+  <ol>
     <li><code>runeId</code>：字符串，Rune 的 ID。</li>
     <li><code>outputs</code>：数组，包含多个输出对象，每个对象包含：
       <ul>
@@ -104,7 +104,7 @@ bitfront.connect(isTestnet).then(result => {
         <li><code>feeRate</code>：数字，自定义手续费率（单位：聪/字节）</li>
       </ul>
     </li>
-  </ul>
+  </ol>
   <h3>返回值：</h3>
   <p>Promise，解析为签名后的 PSBT 十六进制字符串。</p>
   <h3>示例：</h3>
