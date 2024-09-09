@@ -20,7 +20,6 @@
       background-color: #f4f4f4;
       border: 1px solid #ddd;
       border-radius: 4px;
-      padding: .618rem;
       overflow-x: auto;
       white-space: pre-wrap;
       word-break: break-all;
@@ -35,6 +34,7 @@
 
     pre code {
       display: block;
+      padding: .618rem;
     }
 
     button {
@@ -86,7 +86,7 @@ bitfront.connect(isTestnet).then(result => {
   document.getElementById('connectResult').textContent = '连接失败: ' + err.message
 })</code></pre>
   <button onclick="connectWallet()">连接钱包</button>
-  <pre id="connectResult"></pre>
+  <pre><code id="connectResult"></code></pre>
 
   <h2>2. sendRunesMany 方法</h2>
   <p>用于发送多个 Rune 交易（需要先连接钱包）。</p>
@@ -123,7 +123,7 @@ bitfront.sendRunesMany(runeId, outputs, { feeRate: 5 }).then(signedPSBTHex => {
   document.getElementById('sendResult').textContent = '发送失败: ' + err.message
 })</code></pre>
   <button onclick="sendRunes()">发送 Runes</button>
-  <pre id="sendResult"></pre>
+  <pre><code id="sendResult"></code></pre>
 
   <script>
     function connectWallet() {
