@@ -69,7 +69,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     const totalAmount = outputs.map(o => o.amount).reduce((a, b) => a + b)
     let totalInputRunesValue = 0
     for (let i = 0; i < runeUtxos.length; i++) {
-      if (totalInputRunesValue > totalAmount) break
+      if (totalInputRunesValue >= totalAmount) break
       const utxo = runeUtxos[i]
       if (addressType === 'Taproot') {
         psbt.addInput({
