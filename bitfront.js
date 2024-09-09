@@ -214,12 +214,14 @@ async function sendRunesMany(runeId, outputs, options) {
 
     const change = totalInputValue - fee
 
-    if (change <= 0) throw new Error("Not Enough BTC")
-
-    psbt.addOutput({
-      address: address, // change address
-      value: change
-    })
+    if (change < 0) {
+      throw new Error("Not Enough BTC")
+    } else if (change > 0) {
+      psbt.addOutput({
+        address: address, // change address
+        value: change
+      })
+    }
 
     const psbtHex = psbt.toHex()
 
