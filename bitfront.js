@@ -180,7 +180,7 @@ async function sendRunesMany(runeId, outputs, options) {
     // const psbt = new btcJSLib.Psbt({ network })
     let totalInputValue = 0
     for (let i = 0; i < utxos.length; i++) {
-      if (totalInputValue > fee) break
+      if (totalInputValue >= fee) break
       const utxo = utxos[i]
       if (addressType === "Taproot") {
         psbt.addInput({
