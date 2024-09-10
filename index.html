@@ -85,10 +85,35 @@ bitfront.connect(isTestnet).then(result => {
 }).catch(err => {
   document.getElementById('connectResult').textContent = '连接失败: ' + err.message
 })</code></pre>
-  <button onclick="connectWallet()">连接钱包</button>
+  <button onclick="exec(document.getElementById('code_connect').textContent)">连接钱包</button>
   <pre><code id="connectResult"></code></pre>
 
-  <h2>2. sendRunesMany 方法</h2>
+  <h2>2. sendBitcoin 方法</h2>
+  <p>用于发送比特币（需要先连接钱包）。</p>
+  <h3>参数：</h3>
+  <ol>
+    <li><code>toAddress</code>：字符串，接收地址</li>
+    <li><code>satoshis</code>：数字，要发送的比特币金额（单位：聪）。</li>
+    <li><code>options</code>：可选对象，包含：
+      <ul>
+        <li><code>feeRate</code>：数字，自定义手续费率（单位：聪/字节）</li>
+      </ul>
+    </li>
+  </ol>
+  <h3>返回值：</h3>
+  <p>Promise，解析为签名后的 PSBT 十六进制字符串。</p>
+  <h3>示例：</h3>
+  <pre><code contenteditable="true" id="code_send_bitcoin">const toAddress = 'tb1pe8dvq8an9ueaeruqax6ql78hgh9gdd3nfq3rvv6wampar4tnx9pq2e5y20'
+
+bitfront.sendBitcoin(toAddress, 123, { feeRate: 5 }).then(signedPSBTHex => {
+  document.getElementById('sendBitcoinResult').textContent = '交易已签名: ' + signedPSBTHex
+}).catch(err => {
+  document.getElementById('sendBitcoinResult').textContent = '发送失败: ' + err.message
+})</code></pre>
+  <button onclick="exec(document.getElementById('code_send_bitcoin').textContent)">发送比特币</button>
+  <pre><code id="sendBitcoinResult"></code></pre>
+
+  <h2>3. sendRunesMany 方法</h2>
   <p>用于发送多个 Rune 交易（需要先连接钱包）。</p>
   <h3>参数：</h3>
   <ol>
@@ -118,25 +143,17 @@ const outputs = [
 ]
 
 bitfront.sendRunesMany(runeId, outputs, { feeRate: 5 }).then(signedPSBTHex => {
-  document.getElementById('sendResult').textContent = '交易已签名: ' + signedPSBTHex
+  document.getElementById('sendRunesManyResult').textContent = '交易已签名: ' + signedPSBTHex
 }).catch(err => {
-  document.getElementById('sendResult').textContent = '发送失败: ' + err.message
+  document.getElementById('sendRunesManyResult').textContent = '发送失败: ' + err.message
 })</code></pre>
-  <button onclick="sendRunes()">发送 Runes</button>
-  <pre><code id="sendResult"></code></pre>
+  <button onclick="exec(document.getElementById('code_sendrunes_many').textContent)">发送 Runes</button>
+  <pre><code id="sendRunesManyResult"></code></pre>
 
   <script>
-    function connectWallet() {
+    function exec(codeStr) {
       try {
-        new Function(document.getElementById('code_connect').textContent)()
-      } catch (err) {
-        alert(err.message)
-      }
-    }
-
-    function sendRunes() {
-      try {
-        new Function(document.getElementById('code_sendrunes_many').textContent)()
+        new Function(codeStr)()
       } catch (err) {
         alert(err.message)
       }
