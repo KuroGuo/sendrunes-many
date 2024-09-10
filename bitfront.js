@@ -1,3 +1,5 @@
+// Version: 0.0.2
+
 const tinysecp = window.tinySecp256k1
 const btcJSLib = window.bitcoinjsLib
 const { encodeRunestone } = window.runestoneLib
