@@ -1,12 +1,201 @@
+// Version: 0.0.2
+
 const tinysecp = window.tinySecp256k1
 const btcJSLib = window.bitcoinjsLib
 const { encodeRunestone } = window.runestoneLib
 
 tinysecp.then(tinySecp256k1 => btcJSLib.initEccLib(tinySecp256k1))
 
-window.bitfront = { connect, sendRunesMany }
+window.bitfront = { connect, sendBitcoin, sendRunesMany }
 
 let connected, _isTestnet
+
+async function sendBitcoin(toAddress, satoshis, options) {
+  try {
+    if (!address) throw new Error("!address")
+    if (!_publicKey) throw new Error("!_publicKey")
+    console.log("publicKey:", _publicKey)
+
+    const addressType = getBitcoinAddressType(address)
+
+    console.log("addressType:", addressType)
+
+    let payment,
+      network = _isTestnet
+        ? btcJSLib.networks.testnet
+        : btcJSLib.networks.bitcoin
+
+    if (addressType === "Taproot") {
+      payment = btcJSLib.payments.p2tr({
+        internalPubkey: toXOnly(Buffer.from(_publicKey, "hex")),
+        network
+      })
+    } else if (addressType === "Native Segwit") {
+      payment = btcJSLib.payments.p2wpkh({
+        pubkey: Buffer.from(_publicKey, "hex"),
+        network
+      })
+    } else if (addressType === "Legacy") {
+      payment = btcJSLib.payments.p2pkh({
+        pubkey: Buffer.from(_publicKey, "hex"),
+        network
+      })
+    } else if (addressType === "Nested Segwit") {
+      // payment = btcJSLib.payments.p2sh({ pubkey: Buffer.from(_publicKey, 'hex'), network })
+      // 注意：p2sh 通常需要 p2wpkh 嵌套
+      const p2wpkhPayment = btcJSLib.payments.p2wpkh({
+        pubkey: Buffer.from(_publicKey, "hex"),
+        network
+      })
+      payment = btcJSLib.payments.p2sh({ redeem: p2wpkhPayment, network })
+    }
+
+    const getRawTransactionHex = async txHash => {
+      try {
+        const response = await fetch(
+          `https://blockstream.info/${_isTestnet ? "testnet/" : ""
+          }api/tx/${txHash}/hex`
+        )
+        return response.text()
+      } catch (error) {
+        console.error("Error fetching transaction:", error)
+        throw error
+      }
+    }
+
+    const psbt = new btcJSLib.Psbt({ network })
+
+    const utxos = await btcProxy("/utxo/btc", { address })
+
+    let totalInputValue = 0,
+      i = 0
+    for (; i < utxos.length; i++) {
+      if (totalInputValue >= satoshis) break
+      const utxo = utxos[i]
+      if (addressType === "Taproot") {
+        psbt.addInput({
+          hash: utxo.txId,
+          index: utxo.outputIndex,
+          witnessUtxo: { value: utxo.satoshis, script: payment.output },
+          tapInternalKey: toXOnly(Buffer.from(_publicKey, "hex"))
+        })
+      } else {
+        const inputData = {
+          hash: utxo.txId,
+          index: utxo.outputIndex,
+          witnessUtxo: {
+            value: utxo.satoshis,
+            script: payment.output
+            // script: (addressType === 'Nested Segwit' ? payment!.redeem!.output! : payment!.output!) as Buffer
+          }
+        }
+        if (payment?.redeem?.output)
+          inputData.redeemScript = payment.redeem.output
+        if (addressType === "Legacy")
+          inputData.nonWitnessUtxo = Buffer.from(
+            await getRawTransactionHex(utxo.txId),
+            "hex"
+          )
+        psbt.addInput(inputData)
+      }
+      totalInputValue += utxo.satoshis
+      // console.log(totalInputValue)
+    }
+
+    psbt.addOutput({
+      address: toAddress,
+      value: satoshis
+    })
+
+    // 计算交易大小
+    let estimatedSize =
+      psbt.data.inputs.length * 148 + psbt.data.outputs.length * 34 + 10
+
+    // 设置费率（可以根据当前网络情况调整）
+    let feeRate = options?.feeRate || 5 // satoshis per byte
+
+    feeRate = Math.max(feeRate - 1, 1)
+
+    // // 根据不同的地址类型调整估算大小
+    // if (payment?.redeem?.output || addressType === 'Legacy') {
+    //   // P2SH 或 Legacy 地址需要更多空间
+    //   estimatedSize += psbt.data.inputs.length * 50
+    // } else if (addressType === 'Taproot') {
+    //   // Taproot 地址可能需要稍微不同的大小估算
+    //   estimatedSize = psbt.data.inputs.length * 160 + psbt.data.outputs.length * 43 + 10
+    // } else if (addressType === 'Native Segwit') {
+    //   // SegWit 地址通常需要较少的空间
+    //   estimatedSize = psbt.data.inputs.length * 102 + psbt.data.outputs.length * 31 + 10
+    // }
+
+    let fee = estimatedSize * feeRate
+    // await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/runes?${isTestnet ? 'network=testnet&' : ''}address=${address}&runeid=${runeId}`)).json()
+    // const utxos: any[] = await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/btc?address=${address}${isTestnet ? '&network=testnet' : ''}`)).json()
+    // const totalUtxos = [...runeUtxos, ...utxos]
+    // const psbt = new btcJSLib.Psbt({ network })
+    for (; i < utxos.length; i++) {
+      if (totalInputValue >= satoshis + fee) break
+      const utxo = utxos[i]
+      if (addressType === "Taproot") {
+        psbt.addInput({
+          hash: utxo.txId,
+          index: utxo.outputIndex,
+          witnessUtxo: { value: utxo.satoshis, script: payment.output },
+          tapInternalKey: toXOnly(Buffer.from(_publicKey, "hex"))
+        })
+      } else {
+        const inputData = {
+          hash: utxo.txId,
+          index: utxo.outputIndex,
+          witnessUtxo: {
+            value: utxo.satoshis,
+            script: payment.output
+            // script: (addressType === 'Nested Segwit' ? payment!.redeem!.output! : payment!.output!) as Buffer
+          }
+        }
+        if (payment?.redeem?.output)
+          inputData.redeemScript = payment.redeem.output
+        if (addressType === "Legacy")
+          inputData.nonWitnessUtxo = Buffer.from(
+            await getRawTransactionHex(utxo.txId),
+            "hex"
+          )
+        psbt.addInput(inputData)
+      }
+      totalInputValue += utxo.satoshis
+      fee += 80 * feeRate
+      // console.log(totalInputValue)
+    }
+
+    let change = totalInputValue - satoshis - fee
+
+    if (change < 0) {
+      throw new Error("Not Enough BTC")
+    } else if (change > 0) {
+      psbt.addOutput({
+        address: address, // change address
+        value: change
+      })
+    }
+
+    const psbtHex = psbt.toHex()
+
+    console.log("psbtHex:", psbtHex)
+
+    const signedPsbtHex = await signPsbt(psbtHex)
+
+    console.log("signedPsbtHex:", signedPsbtHex)
+
+    // const txid = await pushPsbt(signedPsbtHex)
+
+    // console.log('txid:', txid)
+
+    return signedPsbtHex
+  } catch (err) {
+    // alert(err.message)
+    throw err
+  }
+}
 
 async function sendRunesMany(runeId, outputs, options) {
   try {

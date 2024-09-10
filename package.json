@@ -1,6 +1,6 @@
 {
   "name": "sendrunes-many",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Sending Runes to Multiple Addresses",
   "scripts": {
     "build-dev": "del /q dist\\* && cross-env BITFRONT_ENV=development webpack && copy bitfront.js dist\\bitfront.js && copy index.html dist\\index.html",
