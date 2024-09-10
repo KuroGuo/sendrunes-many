@@ -431,9 +431,9 @@ async function sendRunesMany(runeId, outputs, options) {
   }
 }
 
-async function signPsbt(psbtHex, options = {}) {
+async function signPsbt(psbtHex, options) {
   try {
-    if (walletType === "okx" && options.autoFinalized === false) {
+    if (walletType === "okx" && options?.autoFinalized === false) {
       const psbt = await btcProxy("/compile", { psbtHex }, true)
       options.toSignInputs = psbt.inputs
         .filter(i => i.address === address)
@@ -446,7 +446,7 @@ async function signPsbt(psbtHex, options = {}) {
     try {
       return await wallet.signPsbt(psbtHex, options)
     } catch (err) {
-      if (walletType === "okx" && options.autoFinalized === false) {
+      if (walletType === "okx" && options?.autoFinalized === false) {
         delete options.toSignInputs
         return await wallet.signPsbt(psbtHex, options)
       } else {
