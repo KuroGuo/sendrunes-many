@@ -304,6 +304,8 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     //   estimatedSize = psbt.data.inputs.length * 102 + psbt.data.outputs.length * 31 + 10
     // }
 
+    // const change = totalInputValue - psbt.toBuffer().length * feeRate - (outputs.length + 1 - inputRunesCount) * 546
+
     let fee = estimatedSize * feeRate + 546 * (outputs.length + 1) + JSON.stringify(edicts.map((edict: any) => ({
       id: {
         block: Number(edict.id.block),
