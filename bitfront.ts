@@ -96,13 +96,15 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
       value: satoshis
     })
 
-    // 计算交易大小
-    let estimatedSize = psbt.data.inputs.length * 148 + psbt.data.outputs.length * 34 + 10
+    const netFeeRate: any = (await btcProxy('/feeRate'))?.list
+      ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
 
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
 
-    feeRate = Math.max(feeRate - 1, 1)
+    if (netFeeRate > feeRate) feeRate = netFeeRate * 1.1
+
+    feeRate *= addressType === 'Taproot' ? 0.69 : 0.88
 
     // // 根据不同的地址类型调整估算大小
     // if (payment?.redeem?.output || addressType === 'Legacy') {
@@ -116,13 +118,12 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
     //   estimatedSize = psbt.data.inputs.length * 102 + psbt.data.outputs.length * 31 + 10
     // }
 
-    let fee = estimatedSize * feeRate
     // await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/runes?${isTestnet ? 'network=testnet&' : ''}address=${address}&runeid=${runeId}`)).json()
     // const utxos: any[] = await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/btc?address=${address}${isTestnet ? '&network=testnet' : ''}`)).json()
     // const totalUtxos = [...runeUtxos, ...utxos]
     // const psbt = new btcJSLib.Psbt({ network })
     for (; i < utxos.length; i++) {
-      if (totalInputValue >= satoshis + fee) break
+      if (totalInputValue >= satoshis + psbt.toBuffer().length * feeRate + 34 * feeRate) break
       const utxo = utxos[i]
       if (addressType === 'Taproot') {
         psbt.addInput({
@@ -146,11 +147,10 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
         psbt.addInput(inputData)
       }
       totalInputValue += utxo.satoshis
-      fee += 80 * feeRate
       // console.log(totalInputValue)
     }
 
-    let change = totalInputValue - satoshis - fee
+    let change = Math.floor(totalInputValue - satoshis - psbt.toBuffer().length * feeRate - 34 * feeRate)
 
     if (change < 0) {
       throw new Error('Not Enough BTC')
@@ -227,7 +227,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     })
     const psbt = new btcJSLib.Psbt({ network })
     const totalAmount = outputs.map(o => o.amount).reduce((a, b) => a + b)
-    let totalInputRunesValue = 0
+    let totalInputRunesValue = 0, inputRunesCount = 0
     for (let i = 0; i < runeUtxos.length; i++) {
       if (totalInputRunesValue >= totalAmount) break
       const utxo = runeUtxos[i]
@@ -253,6 +253,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
         psbt.addInput(inputData)
       }
       totalInputRunesValue += Number(utxo.runes[0].amount)
+      inputRunesCount++
       // console.log(totalInputRunesValue, amount)
     }
 
@@ -285,12 +286,19 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     }))
 
     // 计算交易大小
-    let estimatedSize = psbt.data.inputs.length * 148 + psbt.data.outputs.length * 34 + 10
+    // let estimatedSize = psbt.data.inputs.length * 148 + psbt.data.outputs.length * 34 + 10
+
+    const netFeeRate: any = (await btcProxy('/feeRate'))?.list
+      ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
 
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
 
-    feeRate = Math.max(feeRate - 1, 1)
+    if (netFeeRate > feeRate) feeRate = netFeeRate * 1.1
+
+    feeRate *= addressType === 'Taproot' ? 0.758 : 1
+
+    // feeRate = Math.max(feeRate - 1, 1)
 
     // // 根据不同的地址类型调整估算大小
     // if (payment?.redeem?.output || addressType === 'Legacy') {
@@ -306,14 +314,14 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
 
     // const change = totalInputValue - psbt.toBuffer().length * feeRate - (outputs.length + 1 - inputRunesCount) * 546
 
-    let fee = estimatedSize * feeRate + 546 * (outputs.length + 1) + JSON.stringify(edicts.map((edict: any) => ({
-      id: {
-        block: Number(edict.id.block),
-        tx: Number(tx)
-      },
-      amount: Number(edict.amount),
-      output: edict.output
-    }))).length * feeRate
+    // let fee = estimatedSize * feeRate + 546 * (outputs.length + 1) + JSON.stringify(edicts.map((edict: any) => ({
+    //   id: {
+    //     block: Number(edict.id.block),
+    //     tx: Number(tx)
+    //   },
+    //   amount: Number(edict.amount),
+    //   output: edict.output
+    // }))).length * feeRate
 
     const utxos: any[] = await btcProxy('/utxo/btc', { address })
     // await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/runes?${isTestnet ? 'network=testnet&' : ''}address=${address}&runeid=${runeId}`)).json()
@@ -322,7 +330,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     // const psbt = new btcJSLib.Psbt({ network })
     let totalInputValue = 0
     for (let i = 0; i < utxos.length; i++) {
-      if (totalInputValue >= fee) break
+      if (totalInputValue >= psbt.toBuffer().length * feeRate + (outputs.length + 1 - inputRunesCount) * 546) break
       const utxo = utxos[i]
       if (addressType === 'Taproot') {
         psbt.addInput({
@@ -349,7 +357,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
       // console.log(totalInputValue)
     }
 
-    const change = totalInputValue - fee
+    const change = Math.floor(totalInputValue - psbt.toBuffer().length * feeRate - (outputs.length + 1 - inputRunesCount) * 546)
 
     if (change < 0) {
       throw new Error('Not Enough BTC')
