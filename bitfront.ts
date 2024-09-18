@@ -104,7 +104,7 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
 
-    if (netFeeRate > feeRate) feeRate = netFeeRate * 1.1
+    if (netFeeRate >= feeRate) feeRate = netFeeRate * 1.1
 
     feeRate *= addressType === 'Taproot' ? 0.69 : 0.88
 
@@ -299,7 +299,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
 
-    if (netFeeRate > feeRate) feeRate = netFeeRate * 1.1
+    if (netFeeRate >= feeRate) feeRate = netFeeRate * 1.1
 
     feeRate *= addressType === 'Taproot' ? 0.758 : 1
 
