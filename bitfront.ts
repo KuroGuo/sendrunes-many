@@ -60,6 +60,8 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
 
     const psbt = new btcJSLib.Psbt({ network })
 
+    const feeRatePromise = btcProxy('/feeRate')
+
     const utxos: any[] = await btcProxy('/utxo/btc', { address })
 
     let totalInputValue = 0, i = 0
@@ -96,7 +98,7 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
       value: satoshis
     })
 
-    const netFeeRate: any = (await btcProxy('/feeRate'))?.list
+    const netFeeRate: any = (await feeRatePromise)?.list
       ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
 
     // 设置费率（可以根据当前网络情况调整）
@@ -215,6 +217,9 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
       }
     }
 
+    const feeRatePromise = btcProxy('/feeRate')
+    const utxosPromise = btcProxy('/utxo/btc', { address })
+
     const runeUtxos: any[] = (await btcProxy('/utxo/runes', {
       address,
       runeid: runeId
@@ -288,7 +293,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     // 计算交易大小
     // let estimatedSize = psbt.data.inputs.length * 148 + psbt.data.outputs.length * 34 + 10
 
-    const netFeeRate: any = (await btcProxy('/feeRate'))?.list
+    const netFeeRate: any = (await feeRatePromise)?.list
       ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
 
     // 设置费率（可以根据当前网络情况调整）
@@ -323,7 +328,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     //   output: edict.output
     // }))).length * feeRate
 
-    const utxos: any[] = await btcProxy('/utxo/btc', { address })
+    const utxos: any[] = await utxosPromise
     // await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/runes?${isTestnet ? 'network=testnet&' : ''}address=${address}&runeid=${runeId}`)).json()
     // const utxos: any[] = await (await fetch(`https://deai-api-proxy.vercel.app/api/utxo/btc?address=${address}${isTestnet ? '&network=testnet' : ''}`)).json()
     // const totalUtxos = [...runeUtxos, ...utxos]
