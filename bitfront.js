@@ -117,7 +117,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
 
     // if (netFeeRate >= feeRate) feeRate = netFeeRate * 1.1
 
-    feeRate *= addressType === "Taproot" ? 0.69 : 0.88
+    feeRate *= addressType === "Taproot" ? 0.696 : 0.88
 
     // // 根据不同的地址类型调整估算大小
     // if (payment?.redeem?.output || addressType === 'Legacy') {
