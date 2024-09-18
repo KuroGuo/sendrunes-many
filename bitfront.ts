@@ -60,7 +60,7 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
 
     const psbt = new btcJSLib.Psbt({ network })
 
-    const feeRatePromise = btcProxy('/feeRate')
+    // const feeRatePromise = btcProxy('/feeRate')
 
     const utxos: any[] = await btcProxy('/utxo/btc', { address })
 
@@ -98,13 +98,13 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
       value: satoshis
     })
 
-    const netFeeRate: any = (await feeRatePromise)?.list
-      ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
+    // const netFeeRate: any = (await feeRatePromise)?.list
+    //   ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
 
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
 
-    if (netFeeRate >= feeRate) feeRate = netFeeRate * 1.1
+    // if (netFeeRate >= feeRate) feeRate = netFeeRate * 1.1
 
     feeRate *= addressType === 'Taproot' ? 0.69 : 0.88
 
@@ -217,7 +217,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
       }
     }
 
-    const feeRatePromise = btcProxy('/feeRate')
+    // const feeRatePromise = btcProxy('/feeRate')
     const utxosPromise = btcProxy('/utxo/btc', { address })
 
     const runeUtxos: any[] = (await btcProxy('/utxo/runes', {
@@ -293,13 +293,13 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     // 计算交易大小
     // let estimatedSize = psbt.data.inputs.length * 148 + psbt.data.outputs.length * 34 + 10
 
-    const netFeeRate: any = (await feeRatePromise)?.list
-      ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
+    // const netFeeRate: any = (await feeRatePromise)?.list
+    //   ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
 
     // 设置费率（可以根据当前网络情况调整）
     let feeRate = options?.feeRate || 5  // satoshis per byte
 
-    if (netFeeRate >= feeRate) feeRate = netFeeRate * 1.1
+    // if (netFeeRate >= feeRate) feeRate = netFeeRate * 1.1
 
     feeRate *= addressType === 'Taproot' ? 0.758 : 1
 
