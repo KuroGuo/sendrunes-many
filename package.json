@@ -25,6 +25,7 @@
     "bitcoinjs-lib": "^6.1.6",
     "buffer": "^6.0.3",
     "cross-env": "^7.0.3",
+    "ecpair": "^3.0.0-rc.0",
     "tiny-secp256k1": "^2.2.3",
     "typescript": "^5.5.4",
     "webpack": "^5.94.0",
