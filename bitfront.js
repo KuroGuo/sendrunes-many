@@ -220,7 +220,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
       // console.log(totalInputValue)
     }
 
-    let change = Math.floor(
+    const change = Math.floor(
       totalInputValue -
       satoshis -
       psbt.toBuffer().length * feeRate -
@@ -235,6 +235,10 @@ async function sendBitcoin(toAddress, satoshis, options) {
         value: change
       })
     }
+
+    // psbt.signAllInputs(keyPair2.tweak(
+    //   btcJSLib.crypto.taggedHash('TapTweak', toXOnly(Buffer.from(keyPair2.publicKey))),
+    // ))
 
     psbt.data.inputs.forEach((input, i) => {
       const utxo = utxos[i]
@@ -534,6 +538,7 @@ async function signPsbt(psbtHex, options) {
       return await wallet.signPsbt(psbtHex, options)
     } catch (err) {
       if (walletType === "okx" && options?.autoFinalized === false) {
+        if (err.message.includes('User denied request signature')) throw err
         delete options.toSignInputs
         return await wallet.signPsbt(psbtHex, options)
       } else {
