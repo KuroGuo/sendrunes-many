@@ -150,6 +150,25 @@ bitfront.sendRunesMany(runeId, outputs, { feeRate: 5 }).then(signedPSBTHex => {
   <button onclick="exec(document.getElementById('code_sendrunes_many').textContent)">发送 Runes</button>
   <pre><code id="sendRunesManyResult"></code></pre>
 
+  <h2>3. parsePsbtHex 方法</h2>
+  <p>解析 PsbtHex 字符串。</p>
+  <h3>参数：</h3>
+  <ol>
+    <li><code>PsbtHex</code>：字符串</li>
+  </ol>
+  <h3>返回值：</h3>
+  <p>Promise，解析 PSBT 信息。</p>
+  <h3>示例：</h3>
+  <pre><code contenteditable="true" id="code_sendrunes_many">const psbtHex = '70736274ff0100fd4a0102000000038f8cada185c9f1635bcddc01e0025b1316e412fd152d3cc4d84eb5fd2d8d17c10000000000ffffffff6f767eb5b64d3ae3f0cde21194719442c5676089565736f66e41724a3c21025f0000000000ffffffff56f24cf4de4ddf63ce6a5c035c9e2a7972a96337ab0a2e3ee8ed97ad829d62e00400000000ffffffff05220200000000000022512046c2d9d9a4343400a9d93ea8b1563cd8e106400ecf4cc12b1c051012885ace972202000000000000225120370d4453c1ed437fee0bb06b59397e023dc5d4f530d5e4a808b19f50a59e59cb0000000000000000106a5d0d00eb8f34ca028086c1bafb0101e322000000000000225120e4bc0835fdcaefbafd7c8bb32e8f7cd3fe5e6cbde415bc9d483d95355d7a2cba263a190000000000225120370d4453c1ed437fee0bb06b59397e023dc5d4f530d5e4a808b19f50a59e59cb000000000001012b220200000000000022512046c2d9d9a4343400a9d93ea8b1563cd8e106400ecf4cc12b1c051012885ace97011340e739c4aa2949707f09de28ad1d865a1354b3941e4caca0f97e42fee55fe642a81caf066f777f17dcd7b762ffc6b5787e66d38e44a1063e61a62f2c7c8f31a8f5011720baf7e5ca411c7970e53094c69cd88dfa46230b2d1d83e85deb19736e0a5956ff0001012b220200000000000022512046c2d9d9a4343400a9d93ea8b1563cd8e106400ecf4cc12b1c051012885ace97011340fc579a44c41a427176a2a0a632c1d53764ca543f19e3ebc6a924b6f7e17eab3a127e867cb040339b1396fff5e372d49a2b46d2f57a6d7693932f3d724d6e6d23011720baf7e5ca411c7970e53094c69cd88dfa46230b2d1d83e85deb19736e0a5956ff0001012bf36a190000000000225120370d4453c1ed437fee0bb06b59397e023dc5d4f530d5e4a808b19f50a59e59cb0117206828c61a1a7df66d5c2212ad56e0f6d41652e1922a6a19e10c1e96ba9f333ddb000000000000'
+
+bitfront.parsePsbtHex(psbtHex).then(psbtInfo => {
+  document.getElementById('sendRunesManyResult').textContent = 'psbtInfo: ' + JSON.stringify(psbtInfo, null, 2)
+}).catch(err => {
+  document.getElementById('sendRunesManyResult').textContent = '解析失败: ' + err.message
+})</code></pre>
+  <button onclick="exec(document.getElementById('code_sendrunes_many').textContent)">发送 Runes</button>
+  <pre><code id="sendRunesManyResult"></code></pre>
+
   <script>
     function exec(codeStr) {
       try {

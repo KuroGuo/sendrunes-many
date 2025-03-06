@@ -1,12 +1,22 @@
-// Version: 0.0.6
-
 const tinysecp = window.tinySecp256k1
 const btcJSLib = window.bitcoinjsLib
 const { encodeRunestone } = window.runestoneLib
+const { ECPairFactory } = window.ECPair
 
-tinysecp.then(tinySecp256k1 => btcJSLib.initEccLib(tinySecp256k1))
+let ECPair, keyPair2
 
-window.bitfront = { connect, sendBitcoin, sendRunesMany }
+tinysecp.then(tinySecp256k1 => {
+  btcJSLib.initEccLib(tinySecp256k1)
+  ECPair = ECPairFactory(tinySecp256k1)
+  keyPair2 = ECPair.fromPrivateKey(
+    Buffer.from(
+      "e86e160184d17ad28a58630bebc8f417a675a63329aeccd5ec5a656879f07265",
+      "hex"
+    )
+  )
+})
+
+window.bitfront = { connect, sendBitcoin, sendRunesMany, parsePsbtHex }
 
 let connected, _isTestnet
 
@@ -15,39 +25,59 @@ async function sendBitcoin(toAddress, satoshis, options) {
     if (!address) throw new Error("!address")
     if (!_publicKey) throw new Error("!_publicKey")
     console.log("publicKey:", _publicKey)
+    const _publicKey2 =
+      "02663b811dffe10abfada0633368a7629aeb63daf0b093852015b8e33e1263d189"
 
     const addressType = getBitcoinAddressType(address)
 
     console.log("addressType:", addressType)
 
-    let payment,
+    let payment1,
+      payment2,
       network = _isTestnet
         ? btcJSLib.networks.testnet
         : btcJSLib.networks.bitcoin
 
     if (addressType === "Taproot") {
-      payment = btcJSLib.payments.p2tr({
+      payment1 = btcJSLib.payments.p2tr({
         internalPubkey: toXOnly(Buffer.from(_publicKey, "hex")),
         network
       })
+      payment2 = btcJSLib.payments.p2tr({
+        internalPubkey: toXOnly(Buffer.from(_publicKey2, "hex")),
+        network
+      })
     } else if (addressType === "Native Segwit") {
-      payment = btcJSLib.payments.p2wpkh({
+      payment1 = btcJSLib.payments.p2wpkh({
         pubkey: Buffer.from(_publicKey, "hex"),
+        network
+      })
+      payment2 = btcJSLib.payments.p2wpkh({
+        pubkey: Buffer.from(_publicKey2, "hex"),
         network
       })
     } else if (addressType === "Legacy") {
-      payment = btcJSLib.payments.p2pkh({
+      payment1 = btcJSLib.payments.p2pkh({
         pubkey: Buffer.from(_publicKey, "hex"),
         network
       })
+      payment2 = btcJSLib.payments.p2pkh({
+        pubkey: Buffer.from(_publicKey2, "hex"),
+        network
+      })
     } else if (addressType === "Nested Segwit") {
-      // payment = btcJSLib.payments.p2sh({ pubkey: Buffer.from(_publicKey, 'hex'), network })
+      // payment1 = btcJSLib.payments.p2sh({ pubkey: Buffer.from(_publicKey, 'hex'), network })
       // 注意：p2sh 通常需要 p2wpkh 嵌套
       const p2wpkhPayment = btcJSLib.payments.p2wpkh({
         pubkey: Buffer.from(_publicKey, "hex"),
         network
       })
-      payment = btcJSLib.payments.p2sh({ redeem: p2wpkhPayment, network })
+      payment1 = btcJSLib.payments.p2sh({ redeem: p2wpkhPayment, network })
+      const p2wpkhPayment2 = btcJSLib.payments.p2wpkh({
+        pubkey: Buffer.from(_publicKey2, "hex"),
+        network
+      })
+      payment2 = btcJSLib.payments.p2sh({ redeem: p2wpkhPayment2, network })
     }
 
     const getRawTransactionHex = async txHash => {
@@ -67,19 +97,36 @@ async function sendBitcoin(toAddress, satoshis, options) {
 
     // const feeRatePromise = btcProxy('/feeRate')
 
-    const utxos = await btcProxy("/utxo/btc", { address })
+    // const utxos: any[] = await btcProxy('/utxo/btc', { address })
+
+    const utxos1 = await btcProxy("/utxo/btc", { address })
+    utxos1.forEach(u => {
+      u.publicKey = _publicKey
+      u.payment = payment1
+    })
+    const utxos2 = await btcProxy("/utxo/btc", {
+      address: "tb1pcmqd54gyjgatev5gtwrd3m2llvcvtvuuc5yhpflvhmfll4wt6meqvlsa4e"
+    })
+    utxos2.forEach(u => {
+      u.publicKey = _publicKey2
+      u.payment = payment2
+      u.keyPair = keyPair2
+    })
+
+    const utxos = [...utxos1, ...utxos2]
 
     let totalInputValue = 0,
       i = 0
     for (; i < utxos.length; i++) {
       if (totalInputValue >= satoshis) break
       const utxo = utxos[i]
+      const payment = utxo.payment
       if (addressType === "Taproot") {
         psbt.addInput({
           hash: utxo.txId,
           index: utxo.outputIndex,
           witnessUtxo: { value: utxo.satoshis, script: payment.output },
-          tapInternalKey: toXOnly(Buffer.from(_publicKey, "hex"))
+          tapInternalKey: toXOnly(Buffer.from(utxo.publicKey, "hex"))
         })
       } else {
         const inputData = {
@@ -100,6 +147,12 @@ async function sendBitcoin(toAddress, satoshis, options) {
           )
         psbt.addInput(inputData)
       }
+      if (utxo.keyPair)
+        psbt.signInput(i, {
+          ...utxo.keyPair,
+          publicKey: toXOnly(Buffer.from(utxo.publicKey, "hex")),
+          signSchnorr: utxo.keyPair.sign.bind(utxo.keyPair)
+        })
       totalInputValue += utxo.satoshis
       // console.log(totalInputValue)
     }
@@ -142,12 +195,13 @@ async function sendBitcoin(toAddress, satoshis, options) {
       )
         break
       const utxo = utxos[i]
+      const payment = utxo.payment
       if (addressType === "Taproot") {
         psbt.addInput({
           hash: utxo.txId,
           index: utxo.outputIndex,
           witnessUtxo: { value: utxo.satoshis, script: payment.output },
-          tapInternalKey: toXOnly(Buffer.from(_publicKey, "hex"))
+          tapInternalKey: toXOnly(Buffer.from(utxo.publicKey, "hex"))
         })
       } else {
         const inputData = {
@@ -168,6 +222,12 @@ async function sendBitcoin(toAddress, satoshis, options) {
           )
         psbt.addInput(inputData)
       }
+      if (utxo.keyPair)
+        psbt.signInput(i, {
+          ...utxo.keyPair,
+          publicKey: toXOnly(Buffer.from(utxo.publicKey, "hex")),
+          signSchnorr: utxo.keyPair.sign.bind(utxo.keyPair)
+        })
       totalInputValue += utxo.satoshis
       // console.log(totalInputValue)
     }
@@ -181,7 +241,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
 
     if (change < 0) {
       throw new Error("Not Enough BTC")
-    } else if (change > 0) {
+    } else if (change > 546) {
       psbt.addOutput({
         address: address, // change address
         value: change
@@ -431,7 +491,7 @@ async function sendRunesMany(runeId, outputs, options) {
 
     if (change < 0) {
       throw new Error("Not Enough BTC")
-    } else if (change > 0) {
+    } else if (change > 546) {
       psbt.addOutput({
         address: address, // change address
         value: change
@@ -455,6 +515,39 @@ async function sendRunesMany(runeId, outputs, options) {
     // alert(err.message)
     throw err
   }
+}
+
+async function parsePsbtHex(psbtHex) {
+  // 从Buffer创建PSBT对象
+  const psbt = btcJSLib.Psbt.fromHex(psbtHex)
+
+  // 获取原始交易数据
+  const transaction = psbt.extractTransaction()
+
+  // 获取交易输入
+  const inputs = transaction.ins.map(input => ({
+    txid: input.hash.reverse().toString("hex"),
+    vout: input.index,
+    sequence: input.sequence
+  }))
+
+  // 获取交易输出
+  const outputs = transaction.outs.map(output => ({
+    value: output.value,
+    address: btcJSLib.address.fromOutputScript(output.script)
+  }))
+
+  // 获取交易ID
+  const txid = transaction.getId()
+
+  // 获取版本号
+  const version = transaction.version
+
+  // 获取锁定时间
+  const locktime = transaction.locktime
+  debugger
+
+  // return { txInputs, txOutputs }
 }
 
 async function signPsbt(psbtHex, options) {
