@@ -11,6 +11,7 @@ interface Window {
     connect: typeof connect
     sendBitcoin: typeof sendBitcoin
     sendRunesMany: typeof sendRunesMany
+    parsePsbtHex: typeof parsePsbtHex
   }
 }
 
@@ -27,7 +28,7 @@ tinysecp.then((tinySecp256k1: any) => {
   keyPair2 = ECPair.fromPrivateKey(Buffer.from('e86e160184d17ad28a58630bebc8f417a675a63329aeccd5ec5a656879f07265', 'hex'))
 })
 
-window.bitfront = { connect, sendBitcoin, sendRunesMany }
+window.bitfront = { connect, sendBitcoin, sendRunesMany, parsePsbtHex }
 
 let connected: boolean, _isTestnet: boolean
 
@@ -198,7 +199,7 @@ async function sendBitcoin(toAddress: string, satoshis: number, options?: { feeR
 
     if (change < 0) {
       throw new Error('Not Enough BTC')
-    } else if (change > 0) {
+    } else if (change > 546) {
       psbt.addOutput({
         address: address, // change address
         value: change
@@ -408,7 +409,7 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
 
     if (change < 0) {
       throw new Error('Not Enough BTC')
-    } else if (change > 0) {
+    } else if (change > 546) {
       psbt.addOutput({
         address: address, // change address
         value: change
@@ -432,6 +433,41 @@ async function sendRunesMany(runeId: string, outputs: [{ toAddress: string, amou
     // alert(err.message)
     throw err
   }
+}
+
+async function parsePsbtHex(psbtHex: string) {
+  // 从Buffer创建PSBT对象
+  const psbt = btcJSLib.Psbt.fromHex(psbtHex)
+
+  psbt.finalize
+
+  // 获取原始交易数据
+  const transaction = psbt.extractTransaction()
+
+  // 获取交易输入
+  const inputs = transaction.ins.map((input: any) => ({
+    txid: input.hash.reverse().toString('hex'),
+    vout: input.index,
+    sequence: input.sequence
+  }))
+
+  // 获取交易输出
+  const outputs = transaction.outs.map((output: any) => ({
+    value: output.value,
+    address: btcJSLib.address.fromOutputScript(output.script)
+  }))
+
+  // 获取交易ID
+  const txid = transaction.getId();
+
+  // 获取版本号
+  const version = transaction.version;
+
+  // 获取锁定时间
+  const locktime = transaction.locktime;
+debugger
+
+  // return { txInputs, txOutputs }
 }
 
 async function signPsbt(psbtHex: string, options?: any) {

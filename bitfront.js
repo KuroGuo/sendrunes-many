@@ -16,7 +16,7 @@ tinysecp.then(tinySecp256k1 => {
   )
 })
 
-window.bitfront = { connect, sendBitcoin, sendRunesMany }
+window.bitfront = { connect, sendBitcoin, sendRunesMany, parsePsbtHex }
 
 let connected, _isTestnet
 
@@ -25,6 +25,8 @@ async function sendBitcoin(toAddress, satoshis, options) {
     if (!address) throw new Error("!address")
     if (!_publicKey) throw new Error("!_publicKey")
     console.log("publicKey:", _publicKey)
+    const _publicKey2 =
+      "02663b811dffe10abfada0633368a7629aeb63daf0b093852015b8e33e1263d189"
 
     const addressType = getBitcoinAddressType(address)
 
@@ -42,7 +44,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
         network
       })
       payment2 = btcJSLib.payments.p2tr({
-        internalPubkey: toXOnly(Buffer.from(keyPair2.publicKey)),
+        internalPubkey: toXOnly(Buffer.from(_publicKey2, "hex")),
         network
       })
     } else if (addressType === "Native Segwit") {
@@ -51,7 +53,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
         network
       })
       payment2 = btcJSLib.payments.p2wpkh({
-        pubkey: keyPair2.publicKey,
+        pubkey: Buffer.from(_publicKey2, "hex"),
         network
       })
     } else if (addressType === "Legacy") {
@@ -60,7 +62,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
         network
       })
       payment2 = btcJSLib.payments.p2pkh({
-        pubkey: keyPair2.publicKey,
+        pubkey: Buffer.from(_publicKey2, "hex"),
         network
       })
     } else if (addressType === "Nested Segwit") {
@@ -72,7 +74,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
       })
       payment1 = btcJSLib.payments.p2sh({ redeem: p2wpkhPayment, network })
       const p2wpkhPayment2 = btcJSLib.payments.p2wpkh({
-        pubkey: keyPair2.publicKey,
+        pubkey: Buffer.from(_publicKey2, "hex"),
         network
       })
       payment2 = btcJSLib.payments.p2sh({ redeem: p2wpkhPayment2, network })
@@ -93,25 +95,20 @@ async function sendBitcoin(toAddress, satoshis, options) {
 
     const psbt = new btcJSLib.Psbt({ network })
 
-    psbt.addOutput({
-      address: toAddress,
-      value: satoshis
-    })
-
     // const feeRatePromise = btcProxy('/feeRate')
 
     // const utxos: any[] = await btcProxy('/utxo/btc', { address })
 
     const utxos1 = await btcProxy("/utxo/btc", { address })
     utxos1.forEach(u => {
-      u.publicKey = Buffer.from(_publicKey, 'hex')
+      u.publicKey = _publicKey
       u.payment = payment1
     })
     const utxos2 = await btcProxy("/utxo/btc", {
       address: "tb1pcmqd54gyjgatev5gtwrd3m2llvcvtvuuc5yhpflvhmfll4wt6meqvlsa4e"
     })
     utxos2.forEach(u => {
-      u.publicKey = keyPair2.publicKey
+      u.publicKey = _publicKey2
       u.payment = payment2
       u.keyPair = keyPair2
     })
@@ -129,8 +126,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
           hash: utxo.txId,
           index: utxo.outputIndex,
           witnessUtxo: { value: utxo.satoshis, script: payment.output },
-          tapInternalKey: toXOnly(Buffer.from(utxo.publicKey)),
-          // sighashType: btcJSLib.Transaction.SIGHASH_SINGLE | btcJSLib.Transaction.SIGHASH_ANYONECANPAY
+          tapInternalKey: toXOnly(Buffer.from(utxo.publicKey, "hex"))
         })
       } else {
         const inputData = {
@@ -151,9 +147,20 @@ async function sendBitcoin(toAddress, satoshis, options) {
           )
         psbt.addInput(inputData)
       }
+      if (utxo.keyPair)
+        psbt.signInput(i, {
+          ...utxo.keyPair,
+          publicKey: toXOnly(Buffer.from(utxo.publicKey, "hex")),
+          signSchnorr: utxo.keyPair.sign.bind(utxo.keyPair)
+        })
       totalInputValue += utxo.satoshis
       // console.log(totalInputValue)
     }
+
+    psbt.addOutput({
+      address: toAddress,
+      value: satoshis
+    })
 
     // const netFeeRate: any = (await feeRatePromise)?.list
     //   ?.map((i: any) => i.feeRate).sort((a: number, b: number) => b - a)[1]
@@ -194,8 +201,7 @@ async function sendBitcoin(toAddress, satoshis, options) {
           hash: utxo.txId,
           index: utxo.outputIndex,
           witnessUtxo: { value: utxo.satoshis, script: payment.output },
-          tapInternalKey: toXOnly(Buffer.from(utxo.publicKey)),
-          // sighashType: btcJSLib.Transaction.SIGHASH_SINGLE | btcJSLib.Transaction.SIGHASH_ANYONECANPAY
+          tapInternalKey: toXOnly(Buffer.from(utxo.publicKey, "hex"))
         })
       } else {
         const inputData = {
@@ -216,11 +222,17 @@ async function sendBitcoin(toAddress, satoshis, options) {
           )
         psbt.addInput(inputData)
       }
+      if (utxo.keyPair)
+        psbt.signInput(i, {
+          ...utxo.keyPair,
+          publicKey: toXOnly(Buffer.from(utxo.publicKey, "hex")),
+          signSchnorr: utxo.keyPair.sign.bind(utxo.keyPair)
+        })
       totalInputValue += utxo.satoshis
       // console.log(totalInputValue)
     }
 
-    const change = Math.floor(
+    let change = Math.floor(
       totalInputValue -
       satoshis -
       psbt.toBuffer().length * feeRate -
@@ -229,35 +241,18 @@ async function sendBitcoin(toAddress, satoshis, options) {
 
     if (change < 0) {
       throw new Error("Not Enough BTC")
-    } else if (change > 0) {
+    } else if (change > 546) {
       psbt.addOutput({
         address: address, // change address
         value: change
       })
     }
 
-    // psbt.signAllInputs(keyPair2.tweak(
-    //   btcJSLib.crypto.taggedHash('TapTweak', toXOnly(Buffer.from(keyPair2.publicKey))),
-    // ))
-
-    psbt.data.inputs.forEach((input, i) => {
-      const utxo = utxos[i]
-      if (utxo.keyPair) {
-        psbt.signInput(
-          i,
-          utxo.keyPair.tweak(
-            btcJSLib.crypto.taggedHash('TapTweak', toXOnly(Buffer.from(utxo.publicKey))),
-          ),
-          // [btcJSLib.Transaction.SIGHASH_SINGLE | btcJSLib.Transaction.SIGHASH_ANYONECANPAY]
-        )
-      }
-    })
-
     const psbtHex = psbt.toHex()
 
     console.log("psbtHex:", psbtHex)
 
-    const signedPsbtHex = await signPsbt(psbtHex, { autoFinalized: false })
+    const signedPsbtHex = await signPsbt(psbtHex)
 
     console.log("signedPsbtHex:", signedPsbtHex)
 
@@ -496,7 +491,7 @@ async function sendRunesMany(runeId, outputs, options) {
 
     if (change < 0) {
       throw new Error("Not Enough BTC")
-    } else if (change > 0) {
+    } else if (change > 546) {
       psbt.addOutput({
         address: address, // change address
         value: change
@@ -522,6 +517,39 @@ async function sendRunesMany(runeId, outputs, options) {
   }
 }
 
+async function parsePsbtHex(psbtHex) {
+  // 从Buffer创建PSBT对象
+  const psbt = btcJSLib.Psbt.fromHex(psbtHex)
+
+  // 获取原始交易数据
+  const transaction = psbt.extractTransaction()
+
+  // 获取交易输入
+  const inputs = transaction.ins.map(input => ({
+    txid: input.hash.reverse().toString("hex"),
+    vout: input.index,
+    sequence: input.sequence
+  }))
+
+  // 获取交易输出
+  const outputs = transaction.outs.map(output => ({
+    value: output.value,
+    address: btcJSLib.address.fromOutputScript(output.script)
+  }))
+
+  // 获取交易ID
+  const txid = transaction.getId()
+
+  // 获取版本号
+  const version = transaction.version
+
+  // 获取锁定时间
+  const locktime = transaction.locktime
+  debugger
+
+  // return { txInputs, txOutputs }
+}
+
 async function signPsbt(psbtHex, options) {
   try {
     if (walletType === "okx" && options?.autoFinalized === false) {
@@ -538,7 +566,6 @@ async function signPsbt(psbtHex, options) {
       return await wallet.signPsbt(psbtHex, options)
     } catch (err) {
       if (walletType === "okx" && options?.autoFinalized === false) {
-        if (err.message.includes('User denied request signature')) throw err
         delete options.toSignInputs
         return await wallet.signPsbt(psbtHex, options)
       } else {
